@@ -1,8 +1,11 @@
 const express = require('express');
 const { exec } = require('child_process');
 const app = express();
+const { middleware: cache } = require('apicache');
+const onlyStatus200 = (req, res) => res.statusCode === 200;
+const cacheDuration = '3 hours';
 
-app.get('/youtube/:id/:format', (req, res) => {
+app.get('/youtube/:id/:format', cache(cacheDuration, onlyStatus200), (req, res) => {
     // check if youtube ID (must be 11 chars)
     if (!/^[a-zA-Z0-9-_]{11}$/.test(req.params.id))
         return res.status(400).json({ error: { message: 'Youtube ID nije validnog formata' } })
