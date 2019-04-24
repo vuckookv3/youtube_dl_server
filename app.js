@@ -21,7 +21,7 @@ app.get('/youtube/:id/:format', cache(cacheDuration, onlyStatus200), (req, res) 
     exec(command, (err, stdout) => {
         if (err) {
             console.error(err);
-            return res.status(400).json({ error: { message: 'Došlo je do greške' } })
+            return res.status(400).json({ error: { message: 'Došlo je do greške', err } })
         }
         return res.json([stdout]);
     })
