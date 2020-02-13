@@ -15,7 +15,7 @@ app.get('/youtube/:id/:format', cache(cacheDuration, onlyStatus200), (req, res) 
     // make url
     const url = 'https://www.youtube.com/watch?v=' + req.params.id;
 
-    const command = `youtube-dl ${url} -f ${req.params.format} -g`
+    const command = `youtube-dl ${url} -f ${req.params.format} -g --proxy "http://93.87.60.152:3128"`
 
     // summon command
     exec(command, (err, stdout) => {
