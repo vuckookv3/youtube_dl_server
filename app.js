@@ -26,7 +26,7 @@ const cache = (req, res, next) => {
 
 }
 
-const proxy = [
+const proxyServers = [
     "",
     "socks5://Selmarkovucetic:N1s4YiB@185.173.25.55:45786/",
 ];
@@ -41,24 +41,32 @@ app.get('/youtube/:id/:format', cache, (req, res) => {
 
     // make url
     const url = 'https://www.youtube.com/watch?v=' + req.params.id;
+    // const proxy = `${proxyServers[proxyIndex++ % proxyServers.length]}`
+    // console.log(proxy)
     const command = `youtube-dl ${url} -f ${req.params.format} -g --sleep-interval 1`;
 
     // summon command
     try {
-        const a = execSync(command, { encoding: 'utf8' });
-        redis.multi().set(`youtube:${req.params.id}`, a).expire(`youtube:${req.params.id}`, cacheDuration).exec()
-        res.json([a]);
-        // axios.request({
-        //     url: `https://invidio.us/latest_version?id=${req.params.id}&itag=${req.params.format}`,
-        //     method: 'GET',
-        //     maxRedirects: 0,
-        //     validateStatus: (status) => status >= 200 && status < 400,
-        // })
-        //     .then(res => res.headers.location)
-        //     .then(a => {
-        //         redis.multi().set(`youtube:${req.params.id}`, a).expire(`youtube:${req.params.id}`, cacheDuration).exec()
-        //         res.json([a]);
-        //     })
+        if (process.env.METHOD == '1') {
+            const a = execSync(command, { encoding: 'utf8' });
+            redis.multi().set(`youtube:${req.params.id}`, a).expire(`youtube:${req.params.id}`, cacheDuration).exec()
+            res.json([a]);
+        } else if (process.env.METHOD == '2') {
+            axios.request({
+                url: `https://invidio.us/latest_version?id=${req.params.id}&itag=${req.params.format}`,
+                method: 'GET',
+                maxRedirects: 0,
+                validateStatus: (status) => status >= 200 && status < 400,
+            })
+                .then(res => res.headers.location)
+                .then(a => {
+                    redis.multi().set(`youtube:${req.params.id}`, a).expire(`youtube:${req.params.id}`, cacheDuration).exec()
+                    res.json([a]);
+                })
+
+        }
+
+
 
     } catch (err) {
         return res.status(400).json({ error: { message: 'Došlo je do greške', info: err } })
