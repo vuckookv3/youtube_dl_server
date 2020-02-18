@@ -17,10 +17,13 @@ const redis = new Redis({
 
 const cacheDuration = 60 * 60 * 12;
 const cache = async (req, res, next) => {
-    const value = await redis.get(`youtube:${req.params.id}`);
-    if (!value) return next();
 
-    return res.json([value]);
+    redis.get(`youtube:${req.params.id}`).then(value => {
+        if (!value) return next();
+
+        return res.json([value]);
+    });
+
 }
 
 const proxy = [
@@ -29,17 +32,7 @@ const proxy = [
 ];
 let proxyIndex = 0;
 
-app.get('/axios', async (req, res) => {
-    const a = await axios.request(`https://invidio.us/latest_version?id=gvCv_7TuP6g&itag=18`, {
-        maxRedirects: 0,
-        validateStatus: null,
-        method: 'GET'
-    })
-    console.log(a.headers.location);
-    res.json(a.data)
-})
-
-app.get('/youtube/:id/:format', cache, async (req, res) => {
+app.get('/youtube/:id/:format', cache, (req, res) => {
     // check if youtube ID (must be 11 chars)
     if (!/^[a-zA-Z0-9-_]{11}$/.test(req.params.id))
         return res.status(400).json({ error: { message: 'Youtube ID nije validnog formata' } })
@@ -52,15 +45,20 @@ app.get('/youtube/:id/:format', cache, async (req, res) => {
 
     // summon command
     try {
-        // const a = execSync(command, { encoding: 'utf8' });
-        const a = await axios.request({
-            url: `https://invidio.us/latest_version?id=${req.params.id}&itag=${req.params.format}`,
-            method: 'GET',
-            maxRedirects: 0,
-            validateStatus: null,
-        }).then(res => res.headers.location);
-        await redis.multi().set(`youtube:${req.params.id}`, a).expire(`youtube:${req.params.id}`, cacheDuration).exec();
+        const a = execSync(command, { encoding: 'utf8' });
+        redis.multi().set(`youtube:${req.params.id}`, a).expire(`youtube:${req.params.id}`, cacheDuration).exec()
         res.json([a]);
+        // axios.request({
+        //     url: `https://invidio.us/latest_version?id=${req.params.id}&itag=${req.params.format}`,
+        //     method: 'GET',
+        //     maxRedirects: 0,
+        //     validateStatus: (status) => status >= 200 && status < 400,
+        // })
+        //     .then(res => res.headers.location)
+        //     .then(a => {
+        //         redis.multi().set(`youtube:${req.params.id}`, a).expire(`youtube:${req.params.id}`, cacheDuration).exec()
+        //         res.json([a]);
+        //     })
 
     } catch (err) {
         return res.status(400).json({ error: { message: 'Došlo je do greške', info: err } })
