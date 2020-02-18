@@ -16,7 +16,7 @@ const redis = new Redis({
 });
 
 const cacheDuration = 60 * 60 * 12;
-const cache = async (req, res, next) => {
+const cache = (req, res, next) => {
 
     redis.get(`youtube:${req.params.id}`).then(value => {
         if (!value) return next();
