@@ -2,6 +2,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 dotenv.config({ path: path.join(__dirname, './.env') });
 const express = require('express');
+const URL = require('url');
 const { execSync } = require('child_process');
 const axios = require('axios');
 
@@ -15,7 +16,7 @@ const redis = new Redis({
     db: 1,
 });
 
-const cacheDuration = 60 * 60 * 12;
+const cacheDuration = 60 * 60 * 6;
 const cache = (req, res, next) => {
 
     redis.get(`youtube:${req.params.id}`).then(value => {
@@ -60,7 +61,10 @@ app.get('/youtube/:id/:format', cache, (req, res) => {
             })
                 .then(res => res.headers.location)
                 .then(a => {
-                    redis.multi().set(`youtube:${req.params.id}`, a).expire(`youtube:${req.params.id}`, cacheDuration).exec()
+                    const z = URL.parse(a, true);
+                    let expire = Number(z.query.expire) || cacheDuration;
+                    expire = Math.round(expire - Date.now() / 1000);
+                    redis.multi().set(`youtube:${req.params.id}`, a).expire(`youtube:${req.params.id}`, expire).exec()
                     res.json([a]);
                 })
 
