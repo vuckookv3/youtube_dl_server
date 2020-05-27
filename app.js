@@ -54,7 +54,7 @@ app.get('/youtube/:id/:format', cache, (req, res) => {
             res.json([a]);
         } else if (process.env.METHOD == '2') {
             axios.request({
-                url: `https://invidio.us/latest_version?id=${req.params.id}&itag=${req.params.format}`,
+                url: `https://invidious.snopyta.org/latest_version?id=${req.params.id}&itag=${req.params.format}`,
                 method: 'GET',
                 maxRedirects: 0,
                 validateStatus: (status) => status >= 200 && status < 400,
@@ -67,13 +67,18 @@ app.get('/youtube/:id/:format', cache, (req, res) => {
                     redis.multi().set(`youtube:${req.params.id}`, a).expire(`youtube:${req.params.id}`, expire).exec()
                     res.json([a]);
                 })
+                .catch(err => {
+                    console.error(err.message);
+                    return res.status(400).json({ error: { message: 'Došlo je do greške' } });
+                })
 
         }
 
 
 
     } catch (err) {
-        return res.status(400).json({ error: { message: 'Došlo je do greške', info: err } })
+        console.error(err);
+        return res.status(400).json({ error: { message: 'Došlo je do greške' } })
     }
 })
 
