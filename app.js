@@ -54,7 +54,7 @@ app.get('/youtube/:id/:format', cache, (req, res) => {
             res.json([a]);
         } else if (process.env.METHOD == '2') {
             axios.request({
-                url: `https://invidiou.site/latest_version?id=${req.params.id}&itag=${req.params.format}`,
+                url: `https://invidious.snopyta.org/latest_version?id=${req.params.id}&itag=${req.params.format}`,
                 method: 'GET',
                 maxRedirects: 0,
                 validateStatus: (status) => status >= 200 && status < 400,
